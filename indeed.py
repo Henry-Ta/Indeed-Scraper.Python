@@ -1,127 +1,120 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from pandas import ExcelWriter
 
 #----------------------------Scap whole page
-URL="https://ca.indeed.com/jobs?q=internship&l=Vancouver,+BC&jt=internship&fromage=3"
+
+URL="https://ca.indeed.com/computer-internship-jobs-in-Vancouver,-BC"
 page = requests.get(URL)
 
 soup = BeautifulSoup(page.content, 'html.parser')
 
-# print(page.status_code)
+# data = soup.find_all("div",{"data-tn-component":"organicJob"})
 
-# print(soup.prettify())
+# data = soup.find_all("div",{"class":"jobsearch-SerpJobCard"})
 
-# print(list(soup.children))
-
-# for item in (list(soup.children)):
-    # print(item)
-    # print(type(item))
-
-#-----------Option 1-------------------Extract <head>, <body>
-# html = list(soup.children)[2]    
-
-# print(list(html.children))
-# print(html.prettify())
-
-# head = list(html.children)[1]
-# body = list(html.children)[3]
-
-# print(head.prettify())
-# print(body.prettify())
-
-#------------<head>
-
-#------------<body>
-# print(list(body.children))
-
-#*** p = list(body.children)[1] 
-#*** p.get_text()
-
-# print(type(p))
-# print(type(p.get_text()))
-
-#-----------Option 2-----------------Find all
-data = soup.find_all("div",{"data-tn-component":"organicJob"})
-
-title = soup.find_all("h2",{"class":"title"})
-company = soup.find_all("span",{"class":"company"})
-location = soup.find_all("span",{"class":"location accessible-contrast-color-location"})
-difficulty = soup.find_all("span",{"class":"iaLabel iaIconActive"})
-date = soup.find_all("span",{"class":"date"})
-salary = soup.find_all("span",{"class":"salaryText"})
-
-# p = soup.find('p')    # Return the first instance
-# p = soup.find_all('p')
-# p_class= soup.find_all('p',class_='outer-text')
-# p_id = soup.find_all('p',id="first")
-
-# print(type(data))
-print(list(data))
+data = soup.select("div.jobsearch-SerpJobCard")
 print(len(data))
-# print(salary[0].get_text())
-# print(p_class)
-# print(p_id)
 
-#----------------------------------Search by CSS selectors
-#*** p = soup.select("div p")
+title = [] 
+company =[]
+location = []
+difficulty = []
+date = []
+remote = []
+salary = []
+rating = []
 
-# print(p)
+clean_data = []
+for d in list(data):
+    try:
+        # title.append(d.find("h2",{"class":"title"}).get_text().replace('\n\n','').replace('\nnew',''))
+         title.append(d.find("a",{"data-tn-element":"jobTitle"}).get_text().replace('\n',''))
+    except:
+        title.append(None)
 
-#------------Example---------------Weather Data
-# seven_day = soup.find(id="seven-day-forecast")
-# forecast_items = seven_day.find_all(class_="tombstone-container")
-# tonight = forecast_items[0]
+    try:
+        company.append(d.find("span",{"class":"company"}).get_text().replace('\n',''))
+        # company.append(d.find("span",{"class":"company"}).get_text())
+    except:
+        company.append(None)
 
-# print(seven_day.prettify())
-# print(list(forecast_items))
-# print(tonight.prettify())
+    try:
+        location.append(d.find("span",{"class":"location"}).get_text())
+    except:
+        location.append(None)
 
-# period = tonight.find(class_="period-name").get_text()
-# short_desc = tonight.find(class_="short-desc").get_text()
-# temp = tonight.find(class_="temp").get_text()
+    try:
+        difficulty.append(d.find("span",{"class":"iaLabel iaIconActive"}).get_text())  
+    except:
+        difficulty.append(None)
 
-# print(period)
-# print(short_desc)
-# print(temp)
+    try:
+        date.append(d.find("span",{"class":"date"}).get_text())  
+    except:
+        date.append(None)
 
-# img = tonight.find("img")
-# img_desc = img['title']
+    try:
+        salary.append(d.find("span",{"class":"salaryText"}).get_text().replace('\n',''))  
+        # salary.append(d.find("span",{"class":"salaryText"}).get_text())
+    except:
+        salary.append(None)
 
-# print(img)
-# print(img_desc)
-
-# period_tags = seven_day.select(".tombstone-container .period-name")
-# periods = [pt.get_text() for pt in period_tags]
-
-# print(period_tags)
-# print(periods)
-
-# short_descs = [sd.get_text() for sd in seven_day.select(".tombstone-container .short-desc")]
-# temps = [t.get_text() for t in seven_day.select(".tombstone-container .temp")]
-# descs = [d["title"] for d in seven_day.select(".tombstone-container img")]
-
-# print(short_descs)
-# print(temps)
-# print(descs)
-
-#--------------------------- Pandas Dataframe
-# weather = pd.DataFrame({
-    # "period": periods,
-    # "short_desc": short_descs,
-    # "temp": temps,
-    # "desc": descs
-# })
-
-# print(weather)
-
-#-------------------------- Extract Detail
+    try:
+        remote.append(d.find("span",{"class":"remote"}).get_text())
+    except:
+        remote.append(None)
+        
+    try:
+        rating.append(d.find("span",{"class":"ratingsDisplay"}).get_text().replace('\n',''))
+        # rating.append(d.find("span",{"class":"ratingsDisplay"}).get_text())
+    except:
+        rating.append(None)
 
 
-#---------------------------Indeed
-#----------Tree
-#<body>
-#<table id="resultsBody" class="centered"
-#<tbody id="resultsBodyContent"
-#<table id="pageContent" class="serpContainerMinHeight"
-#<div class:"jobsearch-serpjobcard unifiedrow row result clickcard"
+save_data = pd.DataFrame({
+    "Title": title,
+    "Company": company,
+    "Location": location,
+    "Salary": salary,
+    "Date": date,
+    "Rating": rating,
+    "Difficulty": difficulty,
+    "Remote": remote
+        })
+
+print(save_data["Company"][0])
+
+# create excel writer object
+writer = ExcelWriter('output.xlsx')    # pylint: disable=abstract-class-instantiated
+# write dataframe to excel
+save_data.to_excel(writer,"henry",index = False, header=True)
+# save the excel
+writer.save()
+print('DataFrame is written successfully to Excel File.\n')
+
+
+#----------------------------------------------------------#
+has_salary=[]
+for s in save_data["Salary"]:
+    try:
+        if len(s) == 0:
+            has_salary.append(False)
+        else:
+            has_salary.append(True)
+    except:
+        has_salary.append(False)
+n = 0    
+save_salary = []
+for s in has_salary:
+    if s:
+        # print(save_data.iloc[n])        #loc, iloc, ix
+        save_salary.append(save_data.iloc[n])        # table format
+    n+=1
+
+for s in save_salary:
+    print(s)
+    print("\n")
+
+
